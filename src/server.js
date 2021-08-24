@@ -2,7 +2,7 @@ import express from 'express'
 import listEndpoints from 'express-list-endpoints'
 import cors from 'cors'
 import mongoose from 'mongoose'
-import { badRequestMiddleware, catchAllErrorsMiddleware, notFoundMiddleware } from './errorMiddlewares.js'
+import { badRequestMiddleware, catchAllErrorsMiddleware, forbiddenHandler, notFoundMiddleware, unAuthenticatedHandler} from './errorMiddlewares.js'
 
 
 const port = process.env.PORT || 3001
@@ -17,6 +17,8 @@ server.use(express.json())
 
 // ===================== ERROR HANDLERS ==========================
 server.use(notFoundMiddleware)
+server.use(unAuthenticatedHandler)
+server.use(forbiddenHandler)
 server.use(badRequestMiddleware)
 server.use(catchAllErrorsMiddleware)
 // ===============================================================
