@@ -2,13 +2,15 @@ import express from 'express'
 import PostModel from './schema.js'
 import createError from 'http-errors'
 import q2m from 'query-to-mongo'
+import { basicAuthMiddleware } from '../../auth/basic.js'
 
 const blogPostsRouter = express.Router()
 
 // ===============  CREATES NEW BLOG POST =======================
-blogPostsRouter.post('/', async (req, res, next) => {
+blogPostsRouter.post('/', basicAuthMiddleware, async (req, res, next) => {
     try {
-        const newPost = new PostModel(req.body)
+        console.log(req.author)
+        const newPost = new PostModel({...req.body, author: req.author._id})
         const { _id } = await newPost.save()
 
         res.status(201).send({ _id })
@@ -24,6 +26,17 @@ blogPostsRouter.post('/', async (req, res, next) => {
 })
 
 // ===============  RETURNS BLOG POST LIST =======================
+blogPostsRouter.get('/me/stories', basicAuthMiddleware, async (req, res, next) => {
+    try {
+        const myPosts = await PostModel.find({author: req.author._id})
+        res.send(myPosts)
+    } catch (error) {
+        console.log(error)
+        next(error)
+    }
+
+})
+
 blogPostsRouter.get('/', async (req, res, next) => {
     try {
         const query = q2m(req.query)
@@ -54,23 +67,26 @@ blogPostsRouter.get('/:postId', async (req, res, next) => {
 })
 
 // ===============  UPDATES A BLOG POST =======================
-blogPostsRouter.put('/:postId', async (req, res, next) => {
+blogPostsRouter.put('/:postId', basicAuthMiddleware, async (req, res, next) => {
     try {
         const postId = req.params.postId
-        const modifiedPost = await PostModel.findByIdAndUpdate(postId, req.body, {
-            new: true,
-            runValidators: true,
-        } )
+        const modifiedPost = await PostModel.findOneAndUpdate({_id: postId, author: {_id : req.author._id}}, req.body, {new: true, runValidators: true})
+        
+        // const modifiedPost = await PostModel.findByIdAndUpdate(postId, req.body, {
+        //     new: true,
+        //     runValidators: true,
+        // } )
 
         if(modifiedPost) {
             res.send(modifiedPost)
         } else {
-            next(createError(404, `Post with _id ${postId} Not Found!`))
+            next(createError(404, `Post with _id ${postId} Not Found! or you are not authorized!`))
         }
     } catch (error) {
         if(error.name === "ValidationError") {
             next(createError(400, error))
         } else {
+            console.log(error);
             next(createError(500, `An Error ocurred while updating the post ${req.params.postId}`))
         }
     }
