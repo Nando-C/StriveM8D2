@@ -1,11 +1,12 @@
 import express from 'express'
 import AuthorModel from './schema.js'
 import createError from 'http-errors'
+import { basicAuthMiddleware } from '../../auth/basic.js'
 
 const authorsRouter = express.Router()
 
 // ===============  CREATES NEW AUTHOR =======================
-authorsRouter.post('/', async (req, res, next) => {
+authorsRouter.post('/register', async (req, res, next) => {
     try {
         const newAuthor = new AuthorModel(req.body)
         const { _id } = await newAuthor.save()
@@ -24,7 +25,7 @@ authorsRouter.post('/', async (req, res, next) => {
 })
 
 // ===============  RETURNS AUTHORS LIST =======================
-authorsRouter.get('/', async (req, res, next) => {
+authorsRouter.get('/', basicAuthMiddleware, async (req, res, next) => {
     try {
         const authors = await AuthorModel.find()
         res.send(authors)
@@ -34,7 +35,15 @@ authorsRouter.get('/', async (req, res, next) => {
 })
 
 // ===============  RETURNS SINGLE AUTHOR =======================
-authorsRouter.get('/:authorId', async (req, res, next) => {
+authorsRouter.get('/me', basicAuthMiddleware, async (req, res, next) => {
+    try {
+        res.send(req.author)
+    } catch (error) {
+        next(error)
+    }
+})
+
+authorsRouter.get('/:authorId', basicAuthMiddleware, async (req, res, next) => {
     try {
         const authorId = req.params.authorId
         const author = await AuthorModel.findById(authorId)
@@ -48,6 +57,7 @@ authorsRouter.get('/:authorId', async (req, res, next) => {
         next(createError(500, "An Error ocurred while getting the author"))
     }
 })
+
 
 // ===============  UPDATES AN AUTHOR =======================
 authorsRouter.put('/:authorId', async (req, res, next) => {
