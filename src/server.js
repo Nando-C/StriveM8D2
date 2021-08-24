@@ -3,6 +3,8 @@ import listEndpoints from 'express-list-endpoints'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import { badRequestMiddleware, catchAllErrorsMiddleware, forbiddenHandler, notFoundMiddleware, unAuthenticatedHandler} from './errorMiddlewares.js'
+import blogPostsRouter from './blogPosts/index.js'
+import authorsRouter from './authors/index.js'
 
 
 const port = process.env.PORT || 3001
@@ -14,7 +16,8 @@ server.use(cors())
 server.use(express.json())
 
 // ===================== ROUTES  =================================
-
+server.use("/blogPosts", blogPostsRouter)
+server.use("/authors", authorsRouter)
 // ===================== ERROR HANDLERS ==========================
 server.use(notFoundMiddleware)
 server.use(unAuthenticatedHandler)
