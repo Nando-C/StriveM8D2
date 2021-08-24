@@ -93,15 +93,16 @@ blogPostsRouter.put('/:postId', basicAuthMiddleware, async (req, res, next) => {
 })
 
 // ===============  DELETES A BLOG POST =======================
-blogPostsRouter.delete('/:postId', async (req, res, next) => {
+blogPostsRouter.delete('/:postId', basicAuthMiddleware, async (req, res, next) => {
     try {
         const postId = req.params.postId
-        const deletedPost = await PostModel.findByIdAndDelete(postId)
+        const deletedPost = await PostModel.findOneAndDelete({_id: postId, author: {_id : req.author._id}})
+        // const deletedPost = await PostModel.findByIdAndDelete(postId)
 
         if (deletedPost) {
             res.status(204).send()
         } else {
-            next(createError(404, `Post with _id ${postId} Not Found!`))
+            next(createError(404, `Post with _id ${postId} Not Found! or you are not authorized!`))
         }
     } catch (error) {
         console.log(error)
